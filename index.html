@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Carlos — Triathlon & Gym App</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <!-- Header Fijo Superior -->
+    <header class="app-header">
+        <div class="user-profile" onclick="abrirModalOnboarding()">
+            <div class="avatar" id="header-avatar">C</div>
+            <div>
+                <h2 id="header-user-name">Carlos Plan</h2>
+                <span class="sub-text" id="header-user-sub">Cargando perfil...</span>
+            </div>
+        </div>
+        <button class="btn-icon" onclick="abrirModalOnboarding()">
+            <i data-lucide="settings"></i>
+        </button>
+    </header>
+
+    <main class="app-content">
+
+        <!-- PESTAÑA 1: INICIO -->
+        <section id="inicio" class="tab-pane active">
+            <div class="section-title"><i data-lucide="sun"></i> Lo que toca HOY</div>
+            
+            <!-- Bloque Fuerza HOY -->
+            <div class="card card-fuerza-today">
+                <div class="today-header">
+                    <span class="badge-tag gym-tag">Gimnasio & Fuerza</span>
+                    <span class="today-date" id="fecha-hoy-gym">Hoy</span>
+                </div>
+                <h3 id="plan-fuerza-hoy-titulo">Lunes: Pecho + Hombro + Tríceps</h3>
+                <p id="plan-fuerza-hoy-sub" class="muted-text">10 ejercicios • ~60 min</p>
+                <button id="btn-iniciar-fuerza"
+                        class="btn-primary"
+                        style="margin-top:10px;"
+                        onclick="iniciarEntrenoHoy()">
+                    <i data-lucide="play"></i>
+                    <span>Empezar Fuerza</span>
+                </button>
+            </div>
+
+            <!-- Bloque Cardio HOY -->
+            <div class="card card-cardio-today" id="card-cardio-today-box">
+                <div class="today-header">
+                    <span class="badge-tag cardio-tag">Cardio & Triatlón</span>
+                    <span class="today-date" id="fecha-hoy-cardio">Hoy</span>
+                </div>
+                <h3 id="plan-cardio-hoy-titulo">Natación: 10×100m a ritmo objetivo</h3>
+                <p id="plan-cardio-hoy-sub" class="muted-text">Descanso 25-30" • Vol: 1.400 m</p>
+                <button class="btn-orange" style="margin-top:10px;" onclick="switchTab('cardio', document.querySelectorAll('.nav-item')[3])">
+                    <i data-lucide="bike"></i> Registrar Cardio
+                </button>
+            </div>
+
+            <div class="section-title" style="margin-top: 20px;">
+                <i data-lucide="history"></i> Entrenamientos Anteriores
+            </div>
+            <div id="feed-historico" class="feed-container"></div>
+        </section>
+
+        <!-- PESTAÑA 2: CALENDARIO -->
+        <section id="calendario" class="tab-pane">
+            <div class="card glass-card cal-header-card">
+                <div class="cal-top-row">
+                    <button class="btn-icon" onclick="cambiarSemanaCalendario(-1)"><i data-lucide="chevron-left"></i></button>
+                    <div style="text-align: center;">
+                        <span class="cal-week-title" id="cal-semana-label">Semana 1 de 104</span>
+                        <h3 id="cal-bloque-label">Bloque 1 • Carga 1</h3>
+                    </div>
+                    <button class="btn-icon" onclick="cambiarSemanaCalendario(1)"><i data-lucide="chevron-right"></i></button>
+                </div>
+
+                <div style="text-align:center; margin-bottom:12px;">
+                    <span class="badge-phase-tag" id="cal-fase-badge">FASE: BASE / CONSTRUCCIÓN</span>
+                </div>
+
+                <!-- 4 Anillos SVG de Progreso Dinámico -->
+                <div class="rings-grid">
+                    <div class="ring-item">
+                        <div class="svg-ring-container">
+                            <svg class="ring-svg" viewBox="0 0 36 36">
+                                <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                <path class="circle-fill swim-fill" id="ring-swim" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            </svg>
+                            <i data-lucide="waves" class="ring-icon"></i>
+                        </div>
+                        <span class="ring-label">Natación</span>
+                        <span class="ring-val" id="val-swim">0/1400m</span>
+                    </div>
+
+                    <div class="ring-item">
+                        <div class="svg-ring-container">
+                            <svg class="ring-svg" viewBox="0 0 36 36">
+                                <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                <path class="circle-fill bike-fill" id="ring-bike" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            </svg>
+                            <i data-lucide="bike" class="ring-icon"></i>
+                        </div>
+                        <span class="ring-label">Ciclismo</span>
+                        <span class="ring-val" id="val-bike">0/35km</span>
+                    </div>
+
+                    <div class="ring-item">
+                        <div class="svg-ring-container">
+                            <svg class="ring-svg" viewBox="0 0 36 36">
+                                <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                <path class="circle-fill run-fill" id="ring-run" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            </svg>
+                            <i data-lucide="footprints" class="ring-icon"></i>
+                        </div>
+                        <span class="ring-label">Carrera</span>
+                        <span class="ring-val" id="val-run">0/25min</span>
+                    </div>
+
+                    <div class="ring-item">
+                        <div class="svg-ring-container">
+                            <svg class="ring-svg" viewBox="0 0 36 36">
+                                <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                <path class="circle-fill gym-fill" id="ring-gym" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            </svg>
+                            <i data-lucide="dumbbell" class="ring-icon"></i>
+                        </div>
+                        <span class="ring-label">Gym Series</span>
+                        <span class="ring-val" id="val-gym">0/31s</span>
+                    </div>
+                </div>
+
+                <div class="weekly-progress-box">
+                    <div class="progress-info">
+                        <span>Progreso Semanal Completado</span>
+                        <strong id="pct-semanal-val">0%</strong>
+                    </div>
+                    <div class="progress-bar-large">
+                        <div class="progress-bar-fill" id="bar-semanal-fill" style="width: 0%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-title"><i data-lucide="calendar-days"></i> Plan Diario de la Semana</div>
+            <div id="dias-semana-container" class="days-container"></div>
+        </section>
+
+        <!-- PESTAÑA 3: GIMNASIO -->
+        <section id="gym" class="tab-pane">
+            <div id="gym-timer-bar" class="timer-card" style="display:none;">
+                <div class="timer-display">
+                    <i data-lucide="timer" style="color:var(--accent-blue);"></i>
+                    <span id="gym-timer-clock">00:00:00</span>
+                </div>
+                <button class="btn-danger-small" onclick="cancelarEntrenoGym()">Cancelar</button>
+            </div>
+
+            <div class="gym-actions-bar">
+                <button class="btn-secondary" onclick="iniciarEntrenoDesdeCero()">
+                    <i data-lucide="plus-circle"></i> Entreno Libre (Desde 0)
+                </button>
+            </div>
+
+            <div class="card glass-card" id="card-select-rutina">
+                <h3><i data-lucide="bookmark"></i> Seleccionar Rutina Guardada</h3>
+                <select id="select-rutina-guardada" class="select-full" onchange="actualizarVistaRutina()">
+                    <option value="Lunes">Lunes — Pecho + Hombro + Tríceps</option>
+                    <option value="Martes">Martes — Espalda + Bíceps + Antebrazo</option>
+                    <option value="Miércoles">Miércoles — Cuádriceps + Femoral + Gemelo</option>
+                    <option value="Jueves">Jueves — Pecho + Hombro + Espalda + Tríceps</option>
+                    <option value="Viernes">Viernes — Pierna Chill + Glúteo + Gemelo</option>
+                    <option value="Sábado">Sábado — Hombro + Brazos + Pecho</option>
+                </select>
+                <button
+                    type="button"
+                    class="btn-green"
+                    id="btn-iniciar-entreno-gym"
+                    onclick="iniciarEntrenoGym()"
+                    style="width: 100%; margin-top: 12px;"
+                >
+                    <i data-lucide="play"></i>
+                    <span>Iniciar entreno</span>
+                </button>
+            </div>
+
+            <div id="workout-active-area"></div>
+
+            <div id="gym-bottom-actions" style="display:none; margin-top: 15px;">
+                <button class="btn-secondary" onclick="agregarEjercicioLibre()" style="margin-bottom: 10px;">
+                    <i data-lucide="plus"></i> Añadir Ejercicio Libre
+                </button>
+                <button class="btn-green" onclick="finalizarYGuardarGym()">
+                    <i data-lucide="check-circle-2"></i> Finalizar y Guardar Entreno
+                </button>
+            </div>
+        </section>
+
+        <!-- PESTAÑA 4: CARDIO -->
+        <section id="cardio" class="tab-pane">
+            <div class="card glass-card">
+                <h3><i data-lucide="activity"></i> Registrar Cardio</h3>
+                
+                <div class="discipline-picker">
+                    <button class="disc-btn active" data-type="Natación" onclick="setDiscipline('Natación')">🏊‍♂️ Natación</button>
+                    <button class="disc-btn" data-type="Ciclismo" onclick="setDiscipline('Ciclismo')">🚴‍♂️ Ciclismo</button>
+                    <button class="disc-btn" data-type="Carrera" onclick="setDiscipline('Carrera')">🏃‍♂️ Carrera</button>
+                </div>
+
+                <div id="bici-type-selector" style="display:none; margin-bottom:12px;">
+                    <label style="font-size:0.75rem; color:var(--text-muted); margin-bottom:4px; display:block;">MODALIDAD DE CICLISMO</label>
+                    <select id="bici-tipo-modo" onchange="cambiarModoBici()">
+                        <option value="Exterior">Bici Carretera / Exterior (km + tiempo)</option>
+                        <option value="Rodillo">Rodillo / Bici Estática (Tiempo Z2)</option>
+                    </select>
+                </div>
+
+                <form id="form-cardio" onsubmit="guardarEntrenoCardio(event)">
+                    <div class="input-grid">
+                        <div class="input-group" id="group-distancia">
+                            <label id="lbl-distancia">Distancia (m)</label>
+                            <input type="number" step="0.01" id="cardio-dist" placeholder="Ej: 1400" required oninput="calcularRitmoAuto()">
+                        </div>
+                        <div class="input-group">
+                            <label>Tiempo Total (min)</label>
+                            <input type="number" id="cardio-tiempo" placeholder="Ej: 45" required oninput="calcularRitmoAuto()">
+                        </div>
+                    </div>
+
+                    <div class="input-grid">
+                        <div class="input-group">
+                            <label>Ritmo / Tiempo Est.</label>
+                            <input type="text" id="cardio-ritmo-calc" placeholder="Auto" readonly class="input-readonly">
+                        </div>
+                        <div class="input-group">
+                            <label>Pulsaciones Medias</label>
+                            <input type="number" id="cardio-ppm" placeholder="Ej: 145">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-orange" style="margin-top: 10px;"><i data-lucide="save"></i> Guardar Sesión Cardio</button>
+                </form>
+            </div>
+        </section>
+
+        <!-- PESTAÑA 5: SALUD -->
+        <section id="salud" class="tab-pane">
+            <div class="card glass-card">
+                <h3><i data-lucide="heart-pulse"></i> Registrar Métricas Diarias</h3>
+                <form id="form-salud" onsubmit="guardarDatosSalud(event)">
+                    <div class="input-grid">
+                        <div class="input-group">
+                            <label>Peso (kg)</label>
+                            <input type="number" step="0.1" id="salud-peso" placeholder="93.1" required>
+                        </div>
+                        <div class="input-group">
+                            <label>Pasos de Hoy</label>
+                            <input type="number" id="salud-pasos" placeholder="11000" required>
+                        </div>
+                    </div>
+
+                    <div class="input-grid">
+                        <div class="input-group">
+                            <label>Horas Sueño</label>
+                            <input type="number" step="0.1" id="salud-horas" placeholder="7.5" required>
+                        </div>
+                        <div class="input-group">
+                            <label>Garmin Score</label>
+                            <input type="number" id="salud-garmin" placeholder="82">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-green" style="margin-top: 10px;"><i data-lucide="save"></i> Guardar y Actualizar Gráficas</button>
+                </form>
+            </div>
+
+            <div class="card glass-card">
+                <h4 style="color:var(--accent-blue); margin-bottom:10px;"><i data-lucide="line-chart"></i> Evolución del Peso (kg)</h4>
+                <canvas id="chart-peso" height="160"></canvas>
+            </div>
+
+            <div class="card glass-card">
+                <h4 style="color:var(--accent-green); margin-bottom:10px;"><i data-lucide="footprints"></i> Pasos Diarios</h4>
+                <canvas id="chart-pasos" height="160"></canvas>
+            </div>
+
+            <div class="card glass-card">
+                <h4 style="color:var(--accent-purple); margin-bottom:10px;"><i data-lucide="moon"></i> Sueño Garmin</h4>
+                <canvas id="chart-sueno" height="160"></canvas>
+            </div>
+        </section>
+
+        <!-- PESTAÑA 6: IA COACH -->
+        <section id="ia" class="tab-pane">
+            <div class="card glass-card card-ia">
+                <div class="ia-header">
+                    <i data-lucide="bot" class="ia-icon"></i>
+                    <div>
+                        <h3>AI Performance Coach</h3>
+                        <p class="muted-text">Análisis de Sobrecarga Progresiva Histórica</p>
+                    </div>
+                </div>
+
+                <button class="btn-purple" onclick="generarAnalisisIA()" style="margin-top: 15px;">
+                    <i data-lucide="sparkles"></i> Analizar Histórico y Calcular Progresión
+                </button>
+            </div>
+
+            <div id="ia-resultado-area" style="display:none;">
+                <div class="card glass-card">
+                    <h4 style="color:var(--accent-purple); margin-bottom:10px;"><i data-lucide="brain"></i> Prescripción de Sobrecarga IA</h4>
+                    <div id="ia-diagnostico-texto" class="ia-response-box"></div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODAL DE AJUSTE/COMPLETAR ENTRENAMIENTO DEL CALENDARIO -->
+    <div id="modal-ajuste-cal" class="modal-backdrop">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="modal-ajuste-titulo">Ajustar / Marcar Entreno</h3>
+                <button class="btn-close" onclick="cerrarModalAjusteDirecto()">&times;</button>
+            </div>
+            <form onsubmit="guardarAjusteEntrenoModal(event)">
+                <input type="hidden" id="ajuste-dia-key">
+                <input type="hidden" id="ajuste-tipo-key">
+                
+                <div class="input-group" style="margin-bottom:12px;">
+                    <label id="lbl-ajuste-val1">Valor Real (m / km / series):</label>
+                    <input type="number" step="0.1" id="ajuste-input-val1" required>
+                </div>
+                
+                <div class="input-group" style="margin-bottom:12px;">
+                    <label>Tiempo Empleado (min):</label>
+                    <input type="number" id="ajuste-input-tiempo" placeholder="Ej: 45">
+                </div>
+
+                <button type="submit" class="btn-green" style="margin-top:10px;"><i data-lucide="check"></i> Guardar y Marcar Como Hecho</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL DETALLE VISUAL DE EJERCICIOS Y GRÁFICO POR BLOQUES -->
+    <div id="modal-detalle" class="modal-backdrop" onclick="cerrarModalDetalle(event)">
+        <div class="modal-card modal-card-wide">
+            <div class="modal-header">
+                <h3 id="modal-titulo">Detalle del Entrenamiento</h3>
+                <button class="btn-close" onclick="cerrarModalDetalleDirecto()">&times;</button>
+            </div>
+            <div id="modal-body" class="modal-body"></div>
+        </div>
+    </div>
+
+    <!-- MODAL ONBOARDING -->
+    <div id="modal-onboarding" class="modal-backdrop-full">
+        <div class="onboarding-card">
+            <div class="onboarding-header">
+                <h2>⚡ Evaluación Inicial de Perfil</h2>
+                <p class="muted-text">Ajusta tus parámetros y el tipo de piscina</p>
+            </div>
+            
+            <form id="form-onboarding" onsubmit="guardarTestInicial(event)">
+                <div class="step-title"><i data-lucide="user"></i> 1. Datos Generales</div>
+                <div class="input-grid">
+                    <div class="input-group"><label>Nombre</label><input type="text" id="ob-nombre" value="Carlos" required></div>
+                    <div class="input-group"><label>Edad</label><input type="number" id="ob-edad" value="28" required></div>
+                </div>
+
+                <div class="step-title"><i data-lucide="waves"></i> 2. Tipo de Piscina</div>
+                <div class="input-group">
+                    <label>Tipo de Piscina Habitual</label>
+                    <select id="ob-piscina-tipo" onchange="toggleOpcionesPiscina()">
+                        <option value="Cubierta">Piscina Cubierta / Climatizada</option>
+                        <option value="Abierta">Piscina Abierta / Exterior</option>
+                    </select>
+                </div>
+
+                <div id="box-piscina-estacional" style="display:none; background:rgba(56,189,248,0.08); padding:10px; border-radius:8px; margin-bottom:10px;">
+                    <label style="font-size:0.75rem; color:var(--accent-blue);">Meses Disponibles de Uso</label>
+                    <div class="input-grid" style="margin-top:6px;">
+                        <div class="input-group"><label>Apertura</label><select id="ob-piscina-mes-inicio"><option value="5">Mayo</option><option value="6">Junio</option></select></div>
+                        <div class="input-group"><label>Cierre</label><select id="ob-piscina-mes-fin"><option value="9">Septiembre</option><option value="10" selected>Octubre</option></select></div>
+                    </div>
+                </div>
+
+                <div class="step-title"><i data-lucide="heart"></i> 3. Pulsaciones</div>
+                <div class="input-grid">
+                    <div class="input-group"><label>FC Reposo (ppm)</label><input type="number" id="ob-fc-min" value="52" required></div>
+                    <div class="input-group"><label>FC Máxima (ppm)</label><input type="number" id="ob-fc-max" value="188" required></div>
+                </div>
+
+                <div class="step-title"><i data-lucide="ruler"></i> 4. Antropometría</div>
+                <div class="input-grid">
+                    <div class="input-group"><label>Altura (cm)</label><input type="number" id="ob-altura" value="180" required></div>
+                    <div class="input-group"><label>Peso (kg)</label><input type="number" step="0.1" id="ob-peso" value="93.1" required></div>
+                </div>
+
+                <button type="submit" class="btn-purple" style="margin-top: 15px;"><i data-lucide="check"></i> Guardar Perfil</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Navegación Inferior -->
+    <nav class="bottom-nav">
+        <button class="nav-item active" onclick="switchTab('inicio', this)"><i data-lucide="home"></i><span>Inicio</span></button>
+        <button class="nav-item" onclick="switchTab('calendario', this)"><i data-lucide="calendar"></i><span>Calendario</span></button>
+        <button class="nav-item" onclick="switchTab('gym', this)"><i data-lucide="dumbbell"></i><span>Gym</span></button>
+        <button class="nav-item" onclick="switchTab('cardio', this)"><i data-lucide="bike"></i><span>Cardio</span></button>
+        <button class="nav-item" onclick="switchTab('salud', this)"><i data-lucide="heart-pulse"></i><span>Salud</span></button>
+        <button class="nav-item" onclick="switchTab('ia', this)"><i data-lucide="sparkles"></i><span>IA Coach</span></button>
+    </nav>
+
+    <script src="script.js"></script>
+    <script>
+        if (window.lucide) {
+            window.lucide.createIcons();
+        }
+    </script>
+    <script>lucide.createIcons();</script>
+</body>
+</html>
