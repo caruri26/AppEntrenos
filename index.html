@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Carlos — Triathlon & Gym App</title>
     <link rel="stylesheet" href="style.css">
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 </head>
 <body>
 
@@ -219,13 +219,13 @@
 
                 <form id="form-cardio" onsubmit="guardarEntrenoCardio(event)">
                     <div class="input-grid">
-                        <div class="input-group" id="group-distancia">
+                    <div class="input-group" id="group-distancia">
                             <label id="lbl-distancia">Distancia (m)</label>
-                            <input type="number" step="0.01" id="cardio-dist" placeholder="Ej: 1400" required oninput="calcularRitmoAuto()">
+                            <input type="number" min="0" step="0.01" id="cardio-dist" placeholder="Ej: 1400" required oninput="calcularRitmoAuto()">
                         </div>
                         <div class="input-group">
                             <label>Tiempo Total (min)</label>
-                            <input type="number" id="cardio-tiempo" placeholder="Ej: 45" required oninput="calcularRitmoAuto()">
+                            <input type="number" min="0.1" step="0.1" id="cardio-tiempo" placeholder="Ej: 45" required oninput="calcularRitmoAuto()">
                         </div>
                     </div>
 
@@ -236,7 +236,7 @@
                         </div>
                         <div class="input-group">
                             <label>Pulsaciones Medias</label>
-                            <input type="number" id="cardio-ppm" placeholder="Ej: 145">
+                            <input type="number" min="0" id="cardio-ppm" placeholder="Ej: 145">
                         </div>
                     </div>
 
@@ -253,22 +253,22 @@
                     <div class="input-grid">
                         <div class="input-group">
                             <label>Peso (kg)</label>
-                            <input type="number" step="0.1" id="salud-peso" placeholder="93.1" required>
+                            <input type="number" min="0" step="0.1" id="salud-peso" placeholder="93.1" required>
                         </div>
                         <div class="input-group">
                             <label>Pasos de Hoy</label>
-                            <input type="number" id="salud-pasos" placeholder="11000" required>
+                            <input type="number" min="0" id="salud-pasos" placeholder="11000" required>
                         </div>
                     </div>
 
                     <div class="input-grid">
                         <div class="input-group">
                             <label>Horas Sueño</label>
-                            <input type="number" step="0.1" id="salud-horas" placeholder="7.5" required>
+                            <input type="number" min="0" max="24" step="0.1" id="salud-horas" placeholder="7.5" required>
                         </div>
                         <div class="input-group">
                             <label>Garmin Score</label>
-                            <input type="number" id="salud-garmin" placeholder="82">
+                            <input type="number" min="0" id="salud-garmin" placeholder="82">
                         </div>
                     </div>
 
@@ -423,3 +423,4 @@
     <script>lucide.createIcons();</script>
 </body>
 </html>
+
