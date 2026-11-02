@@ -1059,12 +1059,39 @@ function finalizarEntrenoGym() {
 
 
 /* -------------------- CARDIO -------------------- */
+function calcularRitmoAuto() {
+    const distancia = Number(document.getElementById("cardio-dist")?.value || 0);
+    const duracion = Number(document.getElementById("cardio-tiempo")?.value || 0);
+    const salida = document.getElementById("cardio-ritmo-calc");
+    if (!salida) return;
+    if (!(distancia > 0) || !(duracion > 0)) { salida.value = ""; return; }
+    if (disciplinaActiva === "Carrera") salida.value = calcularRitmoCardio(distancia, duracion);
+    else if (disciplinaActiva === "Ciclismo") salida.value = `${(distancia / duracion * 60).toFixed(1)} km/h`;
+    else salida.value = `${(duracion / distancia * 100).toFixed(0)} min/100 m`;
+}
+
+function cambiarModoBici() {
+    const selector = document.getElementById("bici-tipo-modo");
+    const rodillo = disciplinaActiva === "Ciclismo" && selector?.value === "Rodillo";
+    const grupo = document.getElementById("group-distancia");
+    const campo = document.getElementById("cardio-dist");
+    if (grupo) grupo.style.display = rodillo ? "none" : "";
+    if (campo) { campo.required = !rodillo; if (rodillo) campo.value = ""; }
+    calcularRitmoAuto();
+}
+
 function setDiscipline(disciplina) {
     disciplinaActiva = disciplina;
 
-    document.querySelectorAll("[data-disciplina]").forEach(el => {
-        el.classList.toggle("active", el.dataset.disciplina === disciplina);
+    document.querySelectorAll(".disc-btn").forEach(el => {
+        el.classList.toggle("active", el.dataset.type === disciplina);
     });
+
+    const selectorBici = document.getElementById("bici-type-selector");
+    if (selectorBici) selectorBici.style.display = disciplina === "Ciclismo" ? "block" : "none";
+    const etiqueta = document.getElementById("lbl-distancia");
+    if (etiqueta) etiqueta.textContent = disciplina === "Natación" ? "Distancia (m)" : "Distancia (km)";
+    cambiarModoBici();
 
     const titulo = document.getElementById("titulo-disciplina-cardio");
     if (titulo) titulo.textContent = disciplina;
@@ -1081,6 +1108,20 @@ function setDiscipline(disciplina) {
             `<option value="${escaparHTML(nombre)}">${escaparHTML(nombre)}</option>`
         ).join("");
     }
+
+    const grupo = document.getElementById("group-distancia");
+    const campoDistancia = document.getElementById("cardio-dist");
+    if (disciplina !== "Ciclismo") {
+        if (grupo) grupo.style.display = "";
+        if (campoDistancia) campoDistancia.required = true;
+    }
+    if (campoDistancia) campoDistancia.value = "";
+    const duracion = document.getElementById("cardio-tiempo");
+    if (duracion) duracion.value = "";
+    const ppm = document.getElementById("cardio-ppm");
+    if (ppm) ppm.value = "";
+    const ritmo = document.getElementById("cardio-ritmo-calc");
+    if (ritmo) ritmo.value = "";
 
     actualizarDetalleCardio();
 }
@@ -1122,38 +1163,45 @@ function guardarEntrenoCardio(event) {
     const obtener = id => document.getElementById(id);
     const selector = obtener("select-entreno-cardio");
     const nombre = selector?.value || disciplinaActiva;
-    const distancia = Number(obtener("cardio-distancia")?.value || 0);
-    const duracion = Number(obtener("cardio-duracion")?.value || 0);
-    const esfuerzo = obtener("cardio-esfuerzo")?.value || "Moderado";
-    const notas = obtener("cardio-notas")?.value || "";
+    const modo = obtener("bici-tipo-modo")?.value || "Exterior";
+    const rodillo = disciplinaActiva === "Ciclismo" && modo === "Rodillo";
+    const distanciaBruta = Number(obtener("cardio-dist")?.value || 0);
+    const distancia = disciplinaActiva === "Natación" ? distanciaBruta / 1000 : distanciaBruta;
+    const duracion = Number(obtener("cardio-tiempo")?.value || 0);
+    const ppm = Number(obtener("cardio-ppm")?.value || 0);
 
     if (duracion <= 0) {
         alert("Introduce una duración válida en minutos.");
         return;
     }
 
-    const tipo = CARDIO_DETALLES[nombre]?.tipo || disciplinaActiva;
+    if (!rodillo && distancia <= 0) { alert("Introduce una distancia válida."); return; }
+
+    const tipo = disciplinaActiva;
+    const ritmo = disciplinaActiva === "Carrera"
+        ? calcularRitmoCardio(distancia, duracion)
+        : obtener("cardio-ritmo-calc")?.value || "";
     const registro = DB_API.guardarRegistro({
         tipo: "Cardio",
         disciplina: tipo,
         titulo: nombre,
         fechaISO: new Date().toISOString(),
-        distancia,
+        distancia: rodillo ? null : distancia,
+        distanciaUnidad: disciplinaActiva === "Natación" ? "m" : "km",
+        modalidad: rodillo ? "Rodillo" : "Exterior",
         duracion,
-        ritmo: tipo === "Carrera" ? calcularRitmoCardio(distancia, duracion) : "",
-        esfuerzo,
-        notas
+        ppm: ppm || null,
+        ritmo
     });
 
-    const mensaje = document.getElementById("mensaje-cardio-guardado");
-    if (mensaje) mensaje.textContent = "Entrenamiento de cardio guardado.";
-    ["cardio-distancia", "cardio-duracion", "cardio-notas"].forEach(id => {
+    ["cardio-dist", "cardio-tiempo", "cardio-ppm"].forEach(id => {
         const campo = obtener(id);
         if (campo) campo.value = "";
     });
 
     renderFeedHistorico();
     renderCalendarioSemanal();
+    if (obtener("cardio-ritmo-calc")) obtener("cardio-ritmo-calc").value = "";
     alert(`Sesión guardada: ${registro.titulo}`);
 }
 /* -------------------- SALUD Y MEDICIONES -------------------- */
@@ -1168,12 +1216,15 @@ function guardarDatosSalud(event) {
     const registro = {
         fechaISO: new Date().toISOString(),
         peso: obtenerNumero("salud-peso"),
-        cintura: obtenerNumero("salud-cintura"),
-        grasa: obtenerNumero("salud-grasa"),
-        fcReposo: obtenerNumero("salud-fc-reposo"),
-        horasSueno: obtenerNumero("salud-sueno"),
-        notas: document.getElementById("salud-notas")?.value || ""
+        pasos: obtenerNumero("salud-pasos"),
+        horasSueno: obtenerNumero("salud-horas"),
+        garminScore: obtenerNumero("salud-garmin")
     };
+
+    if ([registro.peso, registro.pasos, registro.horasSueno, registro.garminScore].some(v => v != null && (!Number.isFinite(v) || v < 0))) {
+        alert("Introduce valores válidos y no negativos.");
+        return;
+    }
 
     const hayDatos = Object.entries(registro).some(([clave, valor]) =>
         clave !== "fechaISO" && clave !== "notas" && valor !== null
@@ -1191,8 +1242,7 @@ function guardarDatosSalud(event) {
     const mensaje = document.getElementById("mensaje-salud-guardado");
     if (mensaje) mensaje.textContent = "Mediciones guardadas correctamente.";
 
-    ["salud-peso", "salud-cintura", "salud-grasa",
-        "salud-fc-reposo", "salud-sueno", "salud-notas"].forEach(id => {
+    ["salud-peso", "salud-pasos", "salud-horas", "salud-garmin"].forEach(id => {
         const campo = document.getElementById(id);
         if (campo) campo.value = "";
     });
@@ -1209,9 +1259,9 @@ function actualizarResumenSalud() {
 
     const asignaciones = [
         ["resumen-peso", ultimo.peso, " kg"],
-        ["resumen-cintura", ultimo.cintura, " cm"],
-        ["resumen-grasa", ultimo.grasa, "%"],
-        ["resumen-fc-reposo", ultimo.fcReposo, " lpm"]
+        ["resumen-pasos", ultimo.pasos, " pasos"],
+        ["resumen-sueno", ultimo.horasSueno, " h"],
+        ["resumen-garmin", ultimo.garminScore, " puntos"]
     ];
 
     asignaciones.forEach(([id, valor, unidad]) => {
@@ -1222,6 +1272,11 @@ function actualizarResumenSalud() {
 
 function inicializarGraficasSalud() {
     actualizarResumenSalud();
+
+    ["chart-peso", "chart-pasos", "chart-sueno"].forEach(id => {
+        const canvas = document.getElementById(id);
+        if (canvas?.parentElement) canvas.parentElement.style.height = "190px";
+    });
 
     if (typeof Chart === "undefined") {
         console.warn("Chart.js no está cargado. Se omiten las gráficas.");
@@ -1240,10 +1295,9 @@ function inicializarGraficasSalud() {
     );
 
     const definiciones = [
-        { id: "grafica-peso", campo: "peso", etiqueta: "Peso (kg)" },
-        { id: "grafica-cintura", campo: "cintura", etiqueta: "Cintura (cm)" },
-        { id: "grafica-grasa", campo: "grasa", etiqueta: "Grasa corporal (%)" },
-        { id: "grafica-fc-reposo", campo: "fcReposo", etiqueta: "FC reposo (lpm)" }
+        { id: "chart-peso", campo: "peso", etiqueta: "Peso (kg)" },
+        { id: "chart-pasos", campo: "pasos", etiqueta: "Pasos" },
+        { id: "chart-sueno", campo: "horasSueno", etiqueta: "Horas de sueño" }
     ];
 
     definiciones.forEach(def => {
@@ -1254,7 +1308,7 @@ function inicializarGraficasSalud() {
             chartsSalud[def.id].destroy();
         }
 
-        const puntos = ordenados.map(r => r[def.campo]);
+        const puntos = ordenados.map(r => r[def.campo] == null ? null : Number(r[def.campo]));
         if (!puntos.some(v => typeof v === "number" && Number.isFinite(v))) {
             const contexto = canvas.getContext("2d");
             if (contexto) contexto.clearRect(0, 0, canvas.width, canvas.height);
@@ -1342,8 +1396,8 @@ function verDetalleEntreno(id) {
         return;
     }
 
-    const modal = document.getElementById("modal-detalle-entreno");
-    const contenido = document.getElementById("contenido-detalle-entreno");
+    const modal = document.getElementById("modal-detalle");
+    const contenido = document.getElementById("modal-body");
 
     if (contenido) {
         const fecha = obtenerFechaEntreno(entreno);
@@ -1422,8 +1476,7 @@ function verDetalleEntreno(id) {
 
 
 function cerrarModalDetalleEntreno() {
-    const modal = document.getElementById("modal-detalle-entreno");
-    if (modal) modal.style.display = "none";
+    cerrarModalDetalleDirecto();
 }
 
 /* -------------------- CALENDARIO SEMANAL -------------------- */
@@ -1442,12 +1495,9 @@ function renderCalendarioSemanal() {
     const inicio = fechas[0];
     const fin = fechas[6];
 
-    const titulo = document.getElementById("titulo-semana-calendario");
+    const titulo = document.getElementById("cal-semana-label");
     if (titulo) titulo.textContent = formatearRangoSemana(inicio);
-
-    const contenedor =
-        document.getElementById("calendario-semanal") ||
-        document.getElementById("grid-calendario-semanal");
+    const contenedor = document.getElementById("dias-semana-container");
 
     const entrenos = DB_API.obtenerTodosLosEntrenos().filter(e => {
         const fecha = obtenerFechaEntreno(e);
@@ -1462,15 +1512,23 @@ function renderCalendarioSemanal() {
                 return f && f.toDateString() === fecha.toDateString();
             });
 
-            const diaNombre = fecha.toLocaleDateString("es-ES", { weekday: "short" });
+            const diaNombre = fecha.toLocaleDateString("es-ES", { weekday: "long" });
             const esHoy = fecha.toDateString() === new Date().toDateString();
+            const planes = {
+                Lunes: "Fuerza · Pecho, hombro y tríceps",
+                Martes: "Fuerza · Espalda y bíceps",
+                Miércoles: "Fuerza · Piernas",
+                Jueves: "Fuerza · Tren superior",
+                Viernes: "Fuerza · Piernas y glúteos",
+                Sábado: "Fuerza · Complementarios",
+                Domingo: "Descanso"
+            };
+            const tipoDia = diaNombre.charAt(0).toUpperCase() + diaNombre.slice(1);
 
             return `
-                <div class="calendar-day ${esHoy ? "today" : ""}">
-                    <div class="calendar-day-heading">
-                        <span>${escaparHTML(diaNombre)}</span>
-                        <strong>${fecha.getDate()}</strong>
-                    </div>
+                <article class="card glass-card calendar-day ${esHoy ? "today" : ""}">
+                    <h4>${escaparHTML(diaNombre)} ${fecha.getDate()}</h4>
+                    <p>${escaparHTML(planes[tipoDia] || "Plan del día")}</p>
                     ${entrenosDia.length
                         ? entrenosDia.map(e => `
                             <div class="calendar-event">
@@ -1479,12 +1537,35 @@ function renderCalendarioSemanal() {
                         `).join("")
                         : `<span class="calendar-empty">Sin entrenos</span>`
                     }
-                </div>
+                </article>
             `;
         }).join("");
     }
 
     actualizarProgresoSemana(entrenos);
+    actualizarAnillosCalendario(entrenos);
+}
+
+function actualizarAnillosCalendario(entrenos) {
+    const sum = (predicate, field) => entrenos.filter(predicate).reduce((n, e) => n + (Number(e[field]) || 0), 0);
+    const swim = sum(e => e.tipo === "Cardio" && e.disciplina === "Natación", "distancia");
+    const bike = sum(e => e.tipo === "Cardio" && e.disciplina === "Ciclismo", "distancia");
+    const run = sum(e => e.tipo === "Cardio" && e.disciplina === "Carrera", "duracion");
+    const gym = entrenos.filter(e => e.tipo === "Fuerza").reduce((n, e) => n + (Number(e.seriesEfectivasAcumuladas) || (e.ejercicios || []).reduce((s, x) => s + (Number(x.seriesRealizadas) || 0), 0)), 0);
+    const datos = [
+        ["swim", swim, 1400, "m"], ["bike", bike, 35, "km"], ["run", run, 25, "min"], ["gym", gym, 31, "s"]
+    ];
+    datos.forEach(([key, valor, objetivo, unidad]) => {
+        const anillo = document.getElementById(`ring-${key}`);
+        const etiqueta = document.getElementById(`val-${key}`);
+        if (anillo) anillo.setAttribute("stroke-dasharray", `${porcentaje(valor, objetivo)}, 100`);
+        if (etiqueta) etiqueta.textContent = `${Math.round(valor * 10) / 10}/${objetivo}${unidad}`;
+    });
+    const total = Math.round((porcentaje(swim, 1400) + porcentaje(bike, 35) + porcentaje(run, 25) + porcentaje(gym, 31)) / 4);
+    const valorTotal = document.getElementById("pct-semanal-val");
+    const barra = document.getElementById("bar-semanal-fill");
+    if (valorTotal) valorTotal.textContent = `${total}%`;
+    if (barra) barra.style.width = `${total}%`;
 }
 
 function actualizarProgresoSemana(entrenos) {
@@ -1505,10 +1586,15 @@ function actualizarProgresoSemana(entrenos) {
         const elemento = document.getElementById(id);
         if (elemento) {
             const porcentaje = Math.min(100, Math.round(valor / objetivo * 100));
-            elemento.textContent = `${valor}/${objetivo}`;
+        elemento.textContent = `${valor}/${objetivo}`;
             elemento.setAttribute("aria-valuenow", String(porcentaje));
         }
     });
+    const semanal = document.getElementById("pct-semanal-val");
+    const barra = document.getElementById("bar-semanal-fill");
+    const pct = Math.round((Math.min(fuerza, objetivos.fuerza) + Math.min(cardio, objetivos.cardio)) / (objetivos.fuerza + objetivos.cardio) * 100);
+    if (semanal) semanal.textContent = `${pct}%`;
+    if (barra) barra.style.width = `${pct}%`;
 } 
 /* -------------------- DISPONIBILIDAD DE PISCINA -------------------- */
 function piscinaDisponibleEnFecha(fecha, perfil = null) {
@@ -1864,3 +1950,4 @@ function actualizarBotonesGym() {
 
 
 console.log("App Triatlón: script.js cargado.");
+
