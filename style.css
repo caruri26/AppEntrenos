@@ -103,6 +103,15 @@ body { background-color: var(--bg-main); color: var(--text-primary); padding-bot
 .progress-bar-large { height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; }
 .progress-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent-blue), var(--accent-green)); }
 
+/* Calendario semanal responsive */
+.days-container { display: grid; grid-template-columns: repeat(7, minmax(150px, 1fr)); gap: 10px; overflow-x: auto; padding-bottom: 8px; }
+.calendar-day { min-height: 145px; margin: 0; }
+.calendar-day.today { border-color: var(--accent-blue); box-shadow: 0 0 0 1px var(--accent-blue); }
+.calendar-day h4 { text-transform: capitalize; margin-bottom: 8px; }
+.calendar-event { margin-top: 6px; padding: 6px 8px; border-radius: 7px; background: rgba(56,189,248,.12); font-size: .78rem; }
+.calendar-empty { display: inline-block; margin-top: 8px; color: var(--text-muted); font-size: .78rem; }
+@media (max-width: 700px) { .days-container { grid-template-columns: repeat(7, minmax(135px, 1fr)); } }
+
 .day-block { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 12px; padding: 12px; margin-bottom: 12px; }
 .day-head-title { font-size: 0.9rem; font-weight: bold; color: var(--accent-blue); margin-bottom: 8px; }
 .sub-card-entry { background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-card); border-radius: 8px; padding: 10px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
@@ -241,3 +250,4 @@ input, select { width: 100%; background: rgba(15, 23, 42, 0.9); border: 1px soli
 .btn-gym-active i {
     color: #ffffff !important;
 }
+
